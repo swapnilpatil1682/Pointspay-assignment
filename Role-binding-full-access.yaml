@@ -1,0 +1,55 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: Staging
+  name: full-access-staging-admin
+subjects:
+- kind: User
+  name: "Admin"  
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: full-acces
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: Staging
+  name: full-access-staging-dev
+subjects:
+- kind: User
+  name: "Developer"  
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: full-acces 
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: Production
+  name: full-access-prod-admin
+subjects:
+- kind: User
+  name: "Admin"  
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: full-acces 
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: Production
+  name: no-access-prod-developer
+subjects:
+- kind: User
+  name: "Developer"  
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: no-access-role
+  apiGroup: rbac.authorization.k8s.io

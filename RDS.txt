@@ -1,0 +1,100 @@
+
+## Access to RDS from Kubernetes cluster 
+
+
+Step 1 : Create policy in IAM (Configure according to requirement)
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "rds:DescribeDBInstances",
+        "rds:Connect"
+      ],
+      "Resource": "arn:aws:rds:region:account-id:db:database-name"
+    }
+  ]
+}
+
+
+Step 2 :Attach IAM Role to the Kubernetes Service Account:
+
+eksctl create iamserviceaccount \
+  --name rds-access-sa \
+  --namespace default \
+  --cluster <your-cluster-name> \
+  --attach-policy-arn arn:aws:iam::aws-account-id:policy/YourPolicy \
+  --approve \
+  --override-existing-serviceaccounts
+
+
+
+  Step 3 : Store RDS Credentials Using Kubernetes Secrets
+
+  kubectl create secret generic rds-credentials \
+  --from-literal=db-username=<your-db-username> \
+  --from-literal=db-password=<your-db-password> \
+  --from-literal=db-host=<your-rds-endpoint> \
+  --from-literal=db-name=<your-db-name>
+
+
+  Step 4 : Verify the Secret was created:
+  
+  kubectl get secret rds-credentials -o yaml
+
+  Step 5 : Mount env variables 
+
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: rds-app
+            spec:
+              replicas: 1
+              selector:
+                matchLabels:
+                  app: rds-app
+              template:
+                metadata:
+                  labels:
+                    app: rds-app
+                spec:
+                  containers:
+                    - name: app-container
+                      image: <your-image>
+                      env:
+                        - name: DB_USERNAME
+                          valueFrom:
+                            secretKeyRef:
+                              name: rds-credentials
+                              key: db-username
+                        - name: DB_PASSWORD
+                          valueFrom:
+                            secretKeyRef:
+                              name: rds-credentials
+                              key: db-password
+                        - name: DB_HOST
+                          valueFrom:
+                            secretKeyRef:
+                              name: rds-credentials
+                              key: db-host
+                        - name: DB_NAME
+                          valueFrom:
+                            secretKeyRef:
+                              name: rds-credentials
+                              key: db-name
+
+
+Step 6 : Test the connection 
+
+kubectl apply -f rds-secret.yaml
+kubectl apply -f my-app-deployment.yaml
+kubectl logs <pod-name>
+
+Step 7 : For best practices 
+
+  a) Use IAM roles for secure authentication rather than storing static credentials in secrets.
+  b) Use Kubernetes RBAC to limit access to secrets to only those pods or users that require it.
+  c) Enable encryption at rest and in transit for your RDS database.
+  d) Enable CloudWatch logging and monitoring to track access patterns and potential misuse of credentials.
